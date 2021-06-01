@@ -9,51 +9,89 @@ import { SkeletonGrid } from "./components/SkeletonGrid";
 import { FeedList } from "./components/FeedList";
 
 function App() {
-    const queryDefaultValue: string[] = ['nyhavn', 'tivoli'];
 
-    const [query, setQuery] = useState<string>(queryDefaultValue.join(','));
-    const [items, setItems] = useState<FeedItem[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    let scoresByTrackInit = {
+        "0": [],
+        "1": [],
+        "2": [],
+        "3": [],
+        "4": [],
+        "5": [],
+        "6": [],
+        "-1": [],
+    }
+
+    const [selectedFile, setSelectedFile] = useState<any>();
+    const [isSelected, setIsSelected] = useState(false);
+    const [jsonParsed, setJsonParsed] = useState<any>();
+    const [scoresByTrack, setScoresByTrack] = useState<any>(scoresByTrackInit);
+
+    const changeHandler = (event: any) => {
+        setSelectedFile(event.target.files[0]);
+        setIsSelected(true);
+    };
+
+    const handleSubmission = () => {
+        console.log('selectedFile', selectedFile);
+        readFile(selectedFile);
+    };
+
+    const readFile = (file: File) => {
+        const reader = new FileReader();
+        reader.addEventListener('load', (event: any) => {
+            const result = event.target.result;
+            console.log('result', JSON.parse(result));
+            setJsonParsed(JSON.parse(result));
+        });
+
+        reader.addEventListener('progress', (event) => {
+            if (event.loaded && event.total) {
+                const percent = (event.loaded / event.total) * 100;
+                console.log(`Progress: ${Math.round(percent)}`);
+            }
+        });
+        reader.readAsText(file);
+    }
 
     useEffect(() => {
-        setLoading(true);
-        FeedAPI.search(query).then((result: FeedResult) => {
-            setLoading(false);
-            if (result && result.items) {
-                setItems(result.items);
-            }
-        })
-            .catch(error => {
-                setLoading(false);
-            });
-    }, [query]);
+        console.log('jsonParsed', jsonParsed);
+        if (!jsonParsed || !jsonParsed.Cars) return;
 
-    const handleChange = useCallback((chips: string[]) => {
-        setQuery(chips.join(','));
-    }, []);
+        let scoresByTrackCopy = Object.assign(scoresByTrack);
+
+        jsonParsed.Cars.forEach((car: any) => {
+            car.Scores.forEach((score: any) => {
+                // console.log('score', score);
+                scoresByTrackCopy = {...scoresByTrackCopy, [score.TrackId]: [...scoresByTrackCopy[score.TrackId], score]};
+            })
+        })
+
+        setScoresByTrack(scoresByTrackCopy);
+
+        console.log('scoresByTrack', scoresByTrack);
+    }, [jsonParsed]);
 
     return (
-        <div className="App">
-            <ChipInput
-                defaultValue={queryDefaultValue}
-                onChange={(chips) => handleChange(chips)}
-                fullWidthInput
-                fullWidth
-                label={'Type a tag to search'}
-            />
-            <div style={{ maxWidth: '90%', margin: 'auto', marginTop: '20px', marginBottom: '20px' }}>
-                <Grid
-                    container
-                    spacing={3}
-                    direction="row"
-                    justify="flex-start"
-                    alignItems="flex-start"
-                >
-                  { loading? (< SkeletonGrid />) : <FeedList list={items} /> }
-                </Grid>
+        <div>
+            <input type="file" name="file" onChange={changeHandler} />
+            {isSelected ? (
+                <div>
+                    <p>Filename: {selectedFile!.name}</p>
+                    <p>Filetype: {selectedFile!.type}</p>
+                    <p>Size in bytes: {selectedFile!.size}</p>
+                    <p>
+                        lastModifiedDate:{' '}
+                        {selectedFile!.lastModifiedDate.toLocaleDateString()}
+                    </p>
+                </div>
+            ) : (
+                <p>Select a file to show details</p>
+            )}
+            <div>
+                <button onClick={handleSubmission}>Submit</button>
             </div>
         </div>
-    );
+    )
 }
 
 export default App;
