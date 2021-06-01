@@ -7,6 +7,7 @@ import ChipInput from 'material-ui-chip-input'
 import { Grid } from "@material-ui/core";
 import { SkeletonGrid } from "./components/SkeletonGrid";
 import { FeedList } from "./components/FeedList";
+import { ScatterChart } from "./components/Chart";
 
 function App() {
 
@@ -21,6 +22,7 @@ function App() {
         "-1": [],
     }
 
+    const [selectedTrack, setSelectedTrack] = useState(-1);
     const [selectedFile, setSelectedFile] = useState<any>();
     const [isSelected, setIsSelected] = useState(false);
     const [jsonParsed, setJsonParsed] = useState<any>();
@@ -62,7 +64,7 @@ function App() {
         jsonParsed.Cars.forEach((car: any) => {
             car.Scores.forEach((score: any) => {
                 // console.log('score', score);
-                scoresByTrackCopy = {...scoresByTrackCopy, [score.TrackId]: [...scoresByTrackCopy[score.TrackId], score]};
+                scoresByTrackCopy = { ...scoresByTrackCopy, [score.TrackId]: [...scoresByTrackCopy[score.TrackId], score] };
             })
         })
 
@@ -90,7 +92,22 @@ function App() {
             <div>
                 <button onClick={handleSubmission}>Submit</button>
             </div>
-        </div>
+            <select
+                value={selectedTrack}
+                onChange={(e) => {setSelectedTrack(Number(e.target.value))}}
+            >
+                <option value="-1">-1</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                
+            </select>
+            <ScatterChart data={scoresByTrack} trackSelected={selectedTrack} />
+        </div >
     )
 }
 
